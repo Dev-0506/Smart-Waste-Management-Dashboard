@@ -6,6 +6,7 @@ interface AuthContextType {
   deviceProfile: DeviceProfile | null;
   loginMunicipal: (email: string, password: string) => boolean;
   loginDevice: (manufacturingId: string, password: string) => boolean;
+  setDeviceProfileDirect: (manufacturingId: string) => void;
   logoutMunicipal: () => void;
   logoutDevice: () => void;
   updateDeviceProfile: (profile: Partial<DeviceProfile>) => void;
@@ -51,6 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  // Direct profile setter for when API auth has already succeeded
+  const setDeviceProfileDirect = (manufacturingId: string) => {
+    setDeviceProfile({
+      manufacturingId,
+      location: '',
+      installationStatus: 'pending',
+      status: 'inactive',
+      percentFilled: 0,
+      batteryStatus: 100,
+      onboardRequested: false,
+      onboarded: false,
+    });
+  };
+
   const logoutMunicipal = () => setMunicipalUser(null);
   const logoutDevice = () => setDeviceProfile(null);
 
@@ -74,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deviceProfile,
       loginMunicipal,
       loginDevice,
+      setDeviceProfileDirect,
       logoutMunicipal,
       logoutDevice,
       updateDeviceProfile,

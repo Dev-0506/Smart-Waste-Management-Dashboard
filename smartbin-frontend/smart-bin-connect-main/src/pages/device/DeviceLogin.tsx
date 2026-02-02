@@ -13,24 +13,122 @@ export default function DeviceLogin() {
   const [manufacturingId, setManufacturingId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { loginDevice } = useAuth();
+  const [errorMessage, setErrorMessage] = useState("");
+  const { setDeviceProfileDirect } = useAuth();
   const navigate = useNavigate();
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+
+  //   // await new Promise(resolve => setTimeout(resolve, 500));
+
+  //   setErrorMessage("");
+
+  //   if (!manufacturingId || !password) {
+  //     setErrorMessage(
+  //       "Manufacturing ID and Default Password are required."
+  //     );
+  //     return;
+  //   }
+
+  //   const apiUrl = `http://localhost:8080/masterbins/authenticate/${manufacturingId}/${password}`;
+
+  //   try {
+  //     const response = await fetch(apiUrl, {
+  //       method: "GET",
+  //     });
+
+  //     // ❌ Non-200 response
+  //     if (!response.ok) {
+  //       setErrorMessage(
+  //         "Authentication service error. Please try again."
+  //       );
+  //       return;
+  //     }
+
+  //     // Backend returns true / false
+  //     const result = await response.json();
+
+  //     if (result === true || result === "true") {
+  //       // ✅ Authentication successful
+  //       console.log("Device authentication successful");
+  //       toast.success('Device authenticated successfully!');
+  //       navigate('/device/profile');
+
+  //     } else {
+  //       // ❌ Authentication failed
+  //       setErrorMessage(
+  //         "Invalid Manufacturing ID or Password. Please try again."
+  //       );
+  //       toast.error('Invalid Manufacturing ID or Password. Format: SB-XXXX');
+  //     }
+  //     setIsLoading(false);
+  //   } catch (error) {
+  //     console.error("Authentication error:", error);
+  //     setErrorMessage(
+  //       "Unable to connect to authentication service."
+  //     );
+  //   }
+
+
+  //   // const success = loginDevice(manufacturingId, password);
+  //   // if (success) {
+  //   //   toast.success('Device authenticated successfully!');
+  //   //   navigate('/device/profile');
+  //   // } else {
+  //   //   toast.error('Invalid Manufacturing ID or Password. Format: SB-XXXX');
+  //   // }
+
+  //   // setIsLoading(false);
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const success = loginDevice(manufacturingId, password);
-    if (success) {
-      toast.success('Device authenticated successfully!');
-      navigate('/device/profile');
-    } else {
-      toast.error('Invalid Manufacturing ID or Password. Format: SB-XXXX');
+    if (!manufacturingId || !password) {
+      setErrorMessage("Manufacturing ID and Default Password are required.");
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    const apiUrl = `http://localhost:8080/masterbins/authenticate/${manufacturingId}/${password}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        setErrorMessage("Authentication service error. Please try again.");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result === true || result === "true") {
+        console.log("Device authentication successful");
+        toast.success("Device authenticated successfully!");
+
+        // ✅ Set the device profile in auth context before navigating
+        setDeviceProfileDirect(manufacturingId);
+        navigate("/device/profile");
+
+      } else {
+        setErrorMessage("Invalid Manufacturing ID or Password. Please try again.");
+        toast.error("Invalid Manufacturing ID or Password. Format: SB-XXXX");
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setErrorMessage("Unable to connect to authentication service.");
+    } finally {
+      // ✅ ALWAYS reset loading state
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent to-background flex items-center justify-center p-4">
@@ -59,11 +157,10 @@ export default function DeviceLogin() {
                 <Input
                   id="manufacturingId"
                   type="text"
-                  placeholder="SB-0001"
+                  placeholder=""
                   value={manufacturingId}
                   onChange={(e) => setManufacturingId(e.target.value.toUpperCase())}
                   required
-                  pattern="SB-\d{4}"
                 />
                 <p className="text-xs text-muted-foreground">Format: SB-XXXX (e.g., SB-1234)</p>
               </div>
@@ -72,7 +169,7 @@ export default function DeviceLogin() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -81,8 +178,11 @@ export default function DeviceLogin() {
               <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                 {isLoading ? 'Authenticating...' : 'Authenticate Device'}
               </Button>
+              {errorMessage && (
+                <p style={{ color: "red" }}>{errorMessage}</p>
+              )}
             </form>
-            
+
             <div className="mt-6 p-4 bg-muted/30 rounded-lg">
               <p className="text-sm text-muted-foreground text-center">
                 <strong>Demo:</strong> Use ID format SB-XXXX with password: default123
