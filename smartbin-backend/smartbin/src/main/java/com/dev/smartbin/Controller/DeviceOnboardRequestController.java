@@ -4,11 +4,9 @@ import com.dev.smartbin.Model.DeviceOnboardRequest;
 import com.dev.smartbin.Model.SmartBin;
 import com.dev.smartbin.Service.SmartBinService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin
 @RestController
 @RequestMapping(path = "/deviceOnboardRequest")
 public class DeviceOnboardRequestController {
