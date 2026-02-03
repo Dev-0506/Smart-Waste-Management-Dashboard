@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DeviceLayout from '@/components/layout/DeviceLayout';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -22,6 +23,7 @@ import {
 import { toast } from 'sonner';
 
 export default function DeviceProfile() {
+  const navigate = useNavigate();
   const { deviceProfile, updateDeviceProfile } = useAuth();
   const { addOnboardRequest } = useData();
 
@@ -33,6 +35,7 @@ export default function DeviceProfile() {
   const [batteryStatus, setBatteryStatus] = useState<number>(deviceProfile?.batteryStatus || 100);
   const [saving, setSaving] = useState(false);
   const [isProfileSaved, setIsProfileSaved] = useState(false);
+  const [requestingOnboard, setRequestingOnboard] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -78,15 +81,44 @@ export default function DeviceProfile() {
     }
   };
 
-  const handleRequestOnboard = () => {
+  const handleRequestOnboard = async () => {
     if (!location) {
       toast.error('Please set a location before requesting onboard');
       return;
     }
-    if (deviceProfile?.manufacturingId) {
-      addOnboardRequest(deviceProfile.manufacturingId, location);
-      updateDeviceProfile({ onboardRequested: true });
-      toast.success('Onboard request sent to Municipal Authority!');
+
+    setRequestingOnboard(true);
+
+    const requestBody = {
+      device_id: deviceProfile?.manufacturingId || '',
+      deviceOnBoardStatus: 'Requested',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/deviceOnboardRequest/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        if (deviceProfile?.manufacturingId) {
+          addOnboardRequest(deviceProfile.manufacturingId, location);
+          updateDeviceProfile({ onboardRequested: true });
+        }
+        toast.success('Onboard request sent to Municipal Authority!');
+        navigate('/');
+      } else {
+        toast.error('Failed to submit onboard request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting onboard request:', error);
+      toast.error('Network error. Please check your connection.');
+    } finally {
+      setRequestingOnboard(false);
     }
   };
 
@@ -243,7 +275,7 @@ export default function DeviceProfile() {
         </Card>
 
         {/* Request to Onboard */}
-        <Card className={!isProfileComplete ? 'opacity-60' : ''}>
+        <Card className={!isProfileSaved ? 'opacity-60' : ''}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Send className="h-5 w-5 text-primary" />
@@ -254,12 +286,12 @@ export default function DeviceProfile() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!isProfileComplete ? (
+            {!isProfileSaved ? (
               <div className="p-4 bg-muted/30 rounded-lg text-center">
                 <p className="text-sm text-muted-foreground">
-                  Complete your profile setup to enable onboarding request.
+                  Save your profile first to enable onboarding request.
                   <br />
-                  Required: Location, Installation Status (Installed), Status (Active)
+                  Complete and save your device configuration above.
                 </p>
               </div>
             ) : deviceProfile?.onboardRequested ? (
@@ -275,9 +307,10 @@ export default function DeviceProfile() {
                 onClick={handleRequestOnboard}
                 className="w-full gap-2"
                 size="lg"
+                disabled={requestingOnboard}
               >
                 <Send className="h-4 w-4" />
-                Request to Onboard
+                {requestingOnboard ? 'Submitting...' : 'Request to Onboard'}
               </Button>
             )}
           </CardContent>

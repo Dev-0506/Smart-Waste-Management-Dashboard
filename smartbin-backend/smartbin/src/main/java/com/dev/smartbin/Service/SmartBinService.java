@@ -1,5 +1,6 @@
 package com.dev.smartbin.Service;
 
+import com.dev.smartbin.DTO.DeviceOnboardRequestDTO;
 import com.dev.smartbin.Model.DeviceOnboardRequest;
 import com.dev.smartbin.Model.SmartBin;
 import com.dev.smartbin.Repository.DeviceOnboardRequestRepo;
@@ -9,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -28,9 +32,19 @@ public class SmartBinService {
         return smartBinRepo.saveAndFlush(smartBin);
     }
 
-    public DeviceOnboardRequest saveDeviceOnboardRequest(DeviceOnboardRequest deviceOnboardRequest) {
+    public DeviceOnboardRequest saveDeviceOnboardRequest(DeviceOnboardRequestDTO deviceOnboardRequest) {
         logger.info("inside service saveDeviceOnboardRequest");
-        return deviceOnboardRequestRepo.saveAndFlush(deviceOnboardRequest);
+        Optional<SmartBin> smartBin = smartBinRepo.findSmartBinByDeviceId(deviceOnboardRequest.getDevice_id());
+
+        DeviceOnboardRequest onboardRequest=new DeviceOnboardRequest();
+        onboardRequest.setDeviceOnBoardStatus(deviceOnboardRequest.getDeviceOnBoardStatus());
+        if(smartBin.isPresent()){
+            onboardRequest.setSmartBin(smartBin.get());
+        }else{
+            logger.error("Incorrect device id passed");
+        }
+        onboardRequest.setCreatedAt(deviceOnboardRequest.getCreatedAt());
+        return deviceOnboardRequestRepo.saveAndFlush(onboardRequest);
     }
 
     public List<SmartBin> getSmartBinData() {

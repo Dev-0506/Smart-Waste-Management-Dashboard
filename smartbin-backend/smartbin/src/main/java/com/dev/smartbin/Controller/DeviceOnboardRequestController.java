@@ -1,5 +1,6 @@
 package com.dev.smartbin.Controller;
 
+import com.dev.smartbin.DTO.DeviceOnboardRequestDTO;
 import com.dev.smartbin.Model.DeviceOnboardRequest;
 import com.dev.smartbin.Model.SmartBin;
 import com.dev.smartbin.Service.SmartBinService;
@@ -15,7 +16,7 @@ public class DeviceOnboardRequestController {
     private SmartBinService smartBinService;
 
     @PostMapping(path = "/save")
-    public DeviceOnboardRequest saveDeviceOnboardRequest(@RequestBody DeviceOnboardRequest deviceOnboardRequest) {
+    public DeviceOnboardRequest saveDeviceOnboardRequest(@RequestBody DeviceOnboardRequestDTO deviceOnboardRequest) {
         return smartBinService.saveDeviceOnboardRequest(deviceOnboardRequest);
     }
 
