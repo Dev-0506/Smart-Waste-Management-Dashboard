@@ -63,6 +63,11 @@ public class SmartBinService {
             onboardRequest.setDeviceOnBoardStatus("Completed");
             onboardRequest.setUpdatedAt(Date.from(Instant.now()));
             deviceOnboardRequestRepo.saveAndFlush(onboardRequest);
+
+            SmartBin smartBin = onboardRequest.getSmartBin();
+            smartBin.setSmartbin_status("Completed");
+            smartBinRepo.saveAndFlush(smartBin);
+
             return "ACCEPTED";
         } else {
             logger.error("acceptOnboardRequest: Incorrect device id passed");
