@@ -2,15 +2,16 @@ package com.dev.smartbin.Service;
 
 import com.dev.smartbin.DTO.DeviceOnboardRequestDTO;
 import com.dev.smartbin.Model.DeviceOnboardRequest;
+import com.dev.smartbin.Model.ImmediateActionBin;
 import com.dev.smartbin.Model.SmartBin;
 import com.dev.smartbin.Repository.DeviceOnboardRequestRepo;
+import com.dev.smartbin.Repository.ImmediateActionBinRepo;
 import com.dev.smartbin.Repository.SmartBinRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.Date;
@@ -26,6 +27,9 @@ public class SmartBinService {
 
     @Autowired
     private DeviceOnboardRequestRepo deviceOnboardRequestRepo;
+
+    @Autowired
+    private ImmediateActionBinRepo immediateActionBinRepo;
 
     private static final Logger logger = LoggerFactory.getLogger(SmartBinService.class);
 
@@ -66,6 +70,7 @@ public class SmartBinService {
 
             SmartBin smartBin = onboardRequest.getSmartBin();
             smartBin.setSmartbin_status("Completed");
+            smartBin.setIs_smartbin_Onboarded(true);
             smartBinRepo.saveAndFlush(smartBin);
 
             return "ACCEPTED";
@@ -94,4 +99,51 @@ public class SmartBinService {
     public List<DeviceOnboardRequest> getAllDeviceOnboardRequest() {
         return deviceOnboardRequestRepo.findAll();
     }
+
+    public String addGarbageToBin(String deviceId, int fillPercent) {
+        if(fillPercent > 100){
+            return null;
+        }
+        Optional<SmartBin> smartBinOpt = smartBinRepo.findSmartBinByDeviceId(deviceId);
+        if (smartBinOpt.isPresent()) {
+            SmartBin smartBin= smartBinOpt.get();
+            smartBin.setPercent_filled(fillPercent);
+            SmartBin smartBinResultOutput = smartBinRepo.saveAndFlush(smartBin);
+
+            if(fillPercent > 75){
+                takeNecessaryAction(smartBinResultOutput);
+            }else{
+                logger.info("addGarbageToBin: fillPercent is under Control, No Necessary action");
+            }
+            return fillPercent +"% Garbage is Added to the Bin "+deviceId;
+
+        } else {
+            logger.error("addGarbageToBin: Incorrect device id passed");
+            return "Incorrect Device Id Passed";
+        }
+    }
+
+    private void takeNecessaryAction(SmartBin smartBin) {
+
+        ImmediateActionBin immediateActionBin=new ImmediateActionBin();
+        immediateActionBin.setSmartBin(smartBin);
+        if(smartBin.getPercent_filled() > 75 && smartBin.getPercent_filled() < 85){
+            immediateActionBin.setImmediateAction_status("Medium");
+        } else if (smartBin.getPercent_filled() >= 85 && smartBin.getPercent_filled() < 95) {
+            immediateActionBin.setImmediateAction_status("High");
+        }else {
+            immediateActionBin.setImmediateAction_status("Critical");
+        }
+        immediateActionBinRepo.saveAndFlush(immediateActionBin);
+    }
+
+    public List<ImmediateActionBin> getAllImmediateActionBin() {
+        return immediateActionBinRepo.findAll();
+    }
+
+//    @Scheduled(cron = "* * * * *")
+//    public void ScheduleBatteryDrainagePerHour(){
+//
+//
+//    }
 }
