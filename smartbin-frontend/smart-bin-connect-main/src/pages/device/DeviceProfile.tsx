@@ -9,14 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MapPin, 
-  Settings, 
-  Battery, 
+import {
+  MapPin,
+  Settings,
+  Battery,
   Trash2,
   Send,
   CheckCircle2,
-  Clock
+  Clock,
+  Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,26 +26,56 @@ export default function DeviceProfile() {
   const { addOnboardRequest } = useData();
 
   const [location, setLocation] = useState(deviceProfile?.location || '');
+  const [region, setRegion] = useState('');
   const [installationStatus, setInstallationStatus] = useState<string>(deviceProfile?.installationStatus || 'pending');
   const [status, setStatus] = useState<string>(deviceProfile?.status || 'inactive');
   const [percentFilled, setPercentFilled] = useState<number>(deviceProfile?.percentFilled || 0);
   const [batteryStatus, setBatteryStatus] = useState<number>(deviceProfile?.batteryStatus || 100);
   const [saving, setSaving] = useState(false);
+  const [isProfileSaved, setIsProfileSaved] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    updateDeviceProfile({
-      location,
-      installationStatus: installationStatus as 'pending' | 'installed' | 'maintenance',
-      status: status as 'active' | 'inactive' | 'error',
-      percentFilled,
-      batteryStatus,
-    });
 
-    toast.success('Profile updated successfully!');
-    setSaving(false);
+    const requestBody = {
+      device_id: deviceProfile?.manufacturingId || '',
+      smartbin_location: location,
+      installationStatus: installationStatus,
+      smartbin_status: status,
+      smartbin_batteryStatus: batteryStatus,
+      percent_filled: percentFilled,
+      region: region,
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/smartbin/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        updateDeviceProfile({
+          location,
+          installationStatus: installationStatus as 'pending' | 'installed' | 'maintenance',
+          status: status as 'active' | 'inactive' | 'error',
+          percentFilled,
+          batteryStatus,
+        });
+
+        toast.success('Profile saved successfully!');
+        setIsProfileSaved(true);
+      } else {
+        toast.error('Failed to save profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Network error. Please check your connection.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleRequestOnboard = () => {
@@ -112,16 +143,35 @@ export default function DeviceProfile() {
                 placeholder="e.g., Sector 15, Block A, Near Community Park"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                disabled={isProfileSaved}
               />
               <p className="text-xs text-muted-foreground">
                 Provide a detailed address for easy identification
               </p>
             </div>
 
+            {/* Region */}
+            <div className="space-y-2">
+              <Label htmlFor="region" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Region
+              </Label>
+              <Input
+                id="region"
+                placeholder="e.g., North Zone, District 5"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                disabled={isProfileSaved}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the region for this SmartBin
+              </p>
+            </div>
+
             {/* Installation Status */}
             <div className="space-y-2">
               <Label>Installation Status</Label>
-              <Select value={installationStatus} onValueChange={setInstallationStatus}>
+              <Select value={installationStatus} onValueChange={setInstallationStatus} disabled={isProfileSaved}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -136,7 +186,7 @@ export default function DeviceProfile() {
             {/* Device Status */}
             <div className="space-y-2">
               <Label>SmartBin Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={setStatus} disabled={isProfileSaved}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -163,6 +213,7 @@ export default function DeviceProfile() {
                 max={100}
                 step={1}
                 className="w-full"
+                disabled={isProfileSaved}
               />
             </div>
 
@@ -181,11 +232,12 @@ export default function DeviceProfile() {
                 max={100}
                 step={1}
                 className="w-full"
+                disabled={isProfileSaved}
               />
             </div>
 
-            <Button onClick={handleSave} className="w-full" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Profile'}
+            <Button onClick={handleSave} className="w-full" disabled={saving || isProfileSaved}>
+              {saving ? 'Saving...' : isProfileSaved ? 'Profile Saved' : 'Save Profile'}
             </Button>
           </CardContent>
         </Card>
@@ -219,8 +271,8 @@ export default function DeviceProfile() {
                 </p>
               </div>
             ) : (
-              <Button 
-                onClick={handleRequestOnboard} 
+              <Button
+                onClick={handleRequestOnboard}
                 className="w-full gap-2"
                 size="lg"
               >

@@ -17,6 +17,9 @@ public class SmartBin {
     private String device_id;
 
     @Column
+    private String region;
+
+    @Column
     private String smartbin_location;
 
     @Column
@@ -117,6 +120,15 @@ public class SmartBin {
 //    public void setDeviceOnboardRequest(DeviceOnboardRequest deviceOnboardRequest) {
 //        this.deviceOnboardRequest = deviceOnboardRequest;
 //    }
+
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
 
     @Override
     public String toString() {

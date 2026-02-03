@@ -38,11 +38,11 @@ public class SmartbinApplication implements CommandLineRunner {
 
 		MasterBins masterBins=new MasterBins();
 		masterBins.setDevice_id("SB_1234");
-		masterBins.setDevice_password("SB_1234_PASSWORD");
+		masterBins.setDevice_password("SB_1234");
 
 		MasterBins masterBins1=new MasterBins();
 		masterBins1.setDevice_id("SB_9876");
-		masterBins1.setDevice_password("SB_9876_PASSWORD");
+		masterBins1.setDevice_password("SB_9876");
 
 		List<MasterBins> binsList=new ArrayList<>();
 		binsList.add(masterBins);
@@ -52,6 +52,7 @@ public class SmartbinApplication implements CommandLineRunner {
 
 		SmartBin smartBin=new SmartBin();
 		smartBin.setDevice_id("SB_1234");
+		smartBin.setRegion("East");
 		smartBin.setIs_smartbin_Onboarded(Boolean.TRUE);
 		smartBin.setSmartbin_location("Mumbai");
 		smartBin.setPercent_filled(30);
