@@ -47,6 +47,7 @@ export default function Connections() {
   const [acceptedRequests, setAcceptedRequests] = useState<OnboardRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   // Fetch pending requests from API
   useEffect(() => {
@@ -55,11 +56,12 @@ export default function Connections() {
 
   const mapApiResponse = (apiRequest: ApiOnboardRequest): OnboardRequest => {
     // Map API status to component status
+    // API returns "Requested" for pending and "Completed" for onboarded
     const statusMap: Record<string, 'pending' | 'accepted' | 'rejected'> = {
-      'Pending': 'pending',
-      'pending': 'pending',
-      'Accepted': 'accepted',
-      'accepted': 'accepted',
+      'Requested': 'pending',
+      'requested': 'pending',
+      'Completed': 'accepted',
+      'completed': 'accepted',
       'Rejected': 'rejected',
       'rejected': 'rejected',
     };
@@ -134,6 +136,35 @@ export default function Connections() {
     }
   };
 
+  const handleReject = async (request: OnboardRequest) => {
+    try {
+      setRejectingId(request.id);
+      const response = await fetch(
+        `http://localhost:8080/deviceOnboardRequest/reject/${request.deviceId}`,
+        { method: 'DELETE' }
+      );
+
+      if (response.ok) {
+        const responseText = await response.text();
+
+        if (responseText === 'ACCEPTED') {
+          toast.success(`SmartBin ${request.manufacturingId} request has been rejected.`);
+          // Refresh the list after successful rejection
+          await fetchPendingRequests();
+        } else {
+          toast.error(`Failed to reject SmartBin ${request.manufacturingId}. Please try again.`);
+        }
+      } else {
+        toast.error(`Failed to reject request. Server returned status ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast.error('Error connecting to server. Please try again.');
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
@@ -164,7 +195,7 @@ export default function Connections() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Pending Requests</h2>
             <Badge variant="secondary" className="text-sm">
-              {pendingRequests.length} pending
+              {pendingRequests.length} Requested
             </Badge>
           </div>
 
@@ -219,8 +250,17 @@ export default function Connections() {
                           )}
                           Accept
                         </Button>
-                        <Button variant="outline" className="gap-2 text-destructive hover:text-destructive">
-                          <XCircle className="h-4 w-4" />
+                        <Button
+                          variant="outline"
+                          className="gap-2 text-destructive hover:text-destructive"
+                          onClick={() => handleReject(request)}
+                          disabled={rejectingId === request.id}
+                        >
+                          {rejectingId === request.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
                           Reject
                         </Button>
                       </div>
