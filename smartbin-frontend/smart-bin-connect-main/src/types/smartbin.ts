@@ -14,8 +14,10 @@ export interface SmartBin {
 
 export interface OnboardRequest {
   id: string;
+  deviceId: string;
   manufacturingId: string;
   location: string;
+  region: string;
   requestedAt: Date;
   status: 'pending' | 'accepted' | 'rejected';
 }

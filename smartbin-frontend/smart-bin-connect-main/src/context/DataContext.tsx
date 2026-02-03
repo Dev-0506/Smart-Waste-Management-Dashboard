@@ -121,22 +121,28 @@ const initialNotifications: Notification[] = [
 const initialRequests: OnboardRequest[] = [
   {
     id: '1',
+    deviceId: 'SB-1001',
     manufacturingId: 'SB-1001',
     location: 'New Residential Block, Phase 3',
+    region: 'North Zone',
     requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
     status: 'pending',
   },
   {
     id: '2',
+    deviceId: 'SB-1002',
     manufacturingId: 'SB-1002',
     location: 'Tech Park, Building C',
+    region: 'East Zone',
     requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
     status: 'pending',
   },
   {
     id: '3',
+    deviceId: 'SB-1003',
     manufacturingId: 'SB-1003',
     location: 'University Campus, Gate 2',
+    region: 'West Zone',
     requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 8),
     status: 'pending',
   },
@@ -148,7 +154,7 @@ interface DataContextType {
   onboardRequests: OnboardRequest[];
   markNotificationRead: (id: string) => void;
   acceptOnboardRequest: (id: string) => void;
-  addOnboardRequest: (manufacturingId: string, location: string) => void;
+  addOnboardRequest: (manufacturingId: string, location: string, region?: string) => void;
   getImmediateActionBins: () => SmartBin[];
   getUnreadNotificationsCount: () => number;
 }
@@ -173,7 +179,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setOnboardRequests(prev =>
         prev.map(r => r.id === id ? { ...r, status: 'accepted' } : r)
       );
-      
+
       // Add new bin to the system
       const newBin: SmartBin = {
         id: `new-${Date.now()}`,
@@ -191,11 +197,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addOnboardRequest = (manufacturingId: string, location: string) => {
+  const addOnboardRequest = (manufacturingId: string, location: string, region: string = 'Unknown') => {
     const newRequest: OnboardRequest = {
       id: `req-${Date.now()}`,
+      deviceId: manufacturingId,
       manufacturingId,
       location,
+      region,
       requestedAt: new Date(),
       status: 'pending',
     };
@@ -203,9 +211,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const getImmediateActionBins = (): SmartBin[] => {
-    return bins.filter(bin => 
-      bin.percentFilled >= 80 || 
-      bin.batteryStatus <= 20 || 
+    return bins.filter(bin =>
+      bin.percentFilled >= 80 ||
+      bin.batteryStatus <= 20 ||
       bin.status === 'error'
     );
   };

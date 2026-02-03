@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.Date;
@@ -36,12 +38,12 @@ public class SmartBinService {
         logger.info("inside service saveDeviceOnboardRequest");
         Optional<SmartBin> smartBin = smartBinRepo.findSmartBinByDeviceId(deviceOnboardRequest.getDevice_id());
 
-        DeviceOnboardRequest onboardRequest=new DeviceOnboardRequest();
+        DeviceOnboardRequest onboardRequest = new DeviceOnboardRequest();
         onboardRequest.setDeviceOnBoardStatus(deviceOnboardRequest.getDeviceOnBoardStatus());
-        if(smartBin.isPresent()){
+        if (smartBin.isPresent()) {
             onboardRequest.setSmartBin(smartBin.get());
-        }else{
-            logger.error("Incorrect device id passed");
+        } else {
+            logger.error("saveDeviceOnboardRequest: Incorrect device id passed");
         }
         onboardRequest.setCreatedAt(deviceOnboardRequest.getCreatedAt());
         return deviceOnboardRequestRepo.saveAndFlush(onboardRequest);
@@ -51,5 +53,40 @@ public class SmartBinService {
         logger.info("inside service getSmartBinData");
         return smartBinRepo.findAll();
 
+    }
+
+    public String acceptOnboardRequest(String deviceId) {
+        logger.info("inside service acceptOnboardRequest {}", deviceId);
+        Optional<DeviceOnboardRequest> deviceOnboardRequestOptional = deviceOnboardRequestRepo.findDeviceOnboardRequestByDeviceId(deviceId);
+        if (deviceOnboardRequestOptional.isPresent()) {
+            DeviceOnboardRequest onboardRequest = deviceOnboardRequestOptional.get();
+            onboardRequest.setDeviceOnBoardStatus("Completed");
+            onboardRequest.setUpdatedAt(Date.from(Instant.now()));
+            deviceOnboardRequestRepo.saveAndFlush(onboardRequest);
+            return "ACCEPTED";
+        } else {
+            logger.error("acceptOnboardRequest: Incorrect device id passed");
+            return "FAILED";
+        }
+
+    }
+
+    public String rejectOnboardRequest(String deviceId) {
+        logger.info("inside service rejectOnboardRequest");
+        Optional<DeviceOnboardRequest> deviceOnboardRequestOptional = deviceOnboardRequestRepo.findDeviceOnboardRequestByDeviceId(deviceId);
+        if (deviceOnboardRequestOptional.isPresent()) {
+            DeviceOnboardRequest onboardRequest = deviceOnboardRequestOptional.get();
+            deviceOnboardRequestRepo.deleteById(onboardRequest.getId());
+            smartBinRepo.deleteById(onboardRequest.getSmartBin().getId());
+            return "ACCEPTED";
+        } else {
+            logger.error("rejectOnboardRequest: Incorrect device id passed");
+            return "FAILED";
+        }
+
+    }
+
+    public List<DeviceOnboardRequest> getAllDeviceOnboardRequest() {
+        return deviceOnboardRequestRepo.findAll();
     }
 }
