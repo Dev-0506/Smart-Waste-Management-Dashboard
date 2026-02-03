@@ -27,7 +27,7 @@ interface SmartBinData {
 interface ApiOnboardRequest {
   id: number;
   createdAt: string;
-  deviceOnboardStatus: string;
+  deviceOnBoardStatus: string;
   smartBin: SmartBinData;
 }
 
@@ -76,7 +76,7 @@ export default function Connections() {
       location: smartBin?.smartbin_location || 'Unknown Location',
       region: smartBin?.region || 'Unknown Region',
       requestedAt: apiRequest.createdAt,
-      status: statusMap[apiRequest.deviceOnboardStatus] || 'pending',
+      status: statusMap[apiRequest.deviceOnBoardStatus] || 'pending',
     };
   };
 
@@ -86,11 +86,16 @@ export default function Connections() {
       const response = await fetch('http://localhost:8080/deviceOnboardRequest/find');
       if (response.ok) {
         const data: ApiOnboardRequest[] = await response.json();
+        console.log('API Response:', data);
+        console.log('First item deviceOnBoardStatus:', data[0]?.deviceOnBoardStatus);
         // Map API response to component format
         const mappedData = data.map(mapApiResponse);
+        console.log('Mapped Data:', mappedData);
         // Filter pending and accepted requests
         const pending = mappedData.filter(r => r.status === 'pending');
         const accepted = mappedData.filter(r => r.status === 'accepted');
+        console.log('Pending:', pending);
+        console.log('Accepted:', accepted);
         setPendingRequests(pending);
         setAcceptedRequests(accepted);
       } else {
@@ -279,10 +284,11 @@ export default function Connections() {
           )}
         </div>
 
-        {/* Recently Accepted */}
-        {acceptedRequests.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Recently Onboarded</h2>
+        {/* Recently Onboarded */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Recently Onboarded</h2>
+
+          {acceptedRequests.length > 0 ? (
             <div className="space-y-3">
               {acceptedRequests.map((request) => (
                 <Card key={request.id} className="border-l-4 border-l-primary/30 opacity-80">
@@ -316,8 +322,15 @@ export default function Connections() {
                 </Card>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <Card className="py-8">
+              <CardContent className="text-center">
+                <CheckCircle2 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No recently onboarded devices</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </MunicipalLayout>
   );
