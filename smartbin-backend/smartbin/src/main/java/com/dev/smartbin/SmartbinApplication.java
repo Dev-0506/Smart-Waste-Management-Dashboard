@@ -56,9 +56,9 @@ public class SmartbinApplication implements CommandLineRunner {
 		smartBin.setIs_smartbin_Onboarded(Boolean.TRUE);
 		smartBin.setSmartbin_location("Mumbai");
 		smartBin.setPercent_filled(30);
-		smartBin.setSmartbin_status("Pending");
-		smartBin.setSmartbin_batteryStatus("Half");
-		smartBin.setInstallationStatus("Active");
+		smartBin.setSmartbin_status("InActive");
+		smartBin.setSmartbin_batteryStatus("50");
+		smartBin.setInstallationStatus("Installed");
 
 		smartBinRepo.save(smartBin);
 

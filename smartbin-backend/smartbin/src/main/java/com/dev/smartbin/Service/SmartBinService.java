@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Date;
@@ -69,7 +70,7 @@ public class SmartBinService {
             deviceOnboardRequestRepo.saveAndFlush(onboardRequest);
 
             SmartBin smartBin = onboardRequest.getSmartBin();
-            smartBin.setSmartbin_status("Completed");
+            smartBin.setSmartbin_status("Active");
             smartBin.setIs_smartbin_Onboarded(true);
             smartBinRepo.saveAndFlush(smartBin);
 
@@ -138,12 +139,34 @@ public class SmartBinService {
     }
 
     public List<ImmediateActionBin> getAllImmediateActionBin() {
-        return immediateActionBinRepo.findAll();
+        List<ImmediateActionBin> immediateActionBins= immediateActionBinRepo.findAll();
+        return immediateActionBins.stream().filter(p->"Active".equalsIgnoreCase(p.getSmartBin().getSmartbin_status())).toList();
     }
 
-//    @Scheduled(cron = "* * * * *")
-//    public void ScheduleBatteryDrainagePerHour(){
-//
-//
-//    }
+
+    @Scheduled(cron = "0 0 * * * ?")
+    @Transactional
+    public void scheduleBatteryDrainagePerHour() {
+        logger.info("ScheduleBatteryDrainagePerHour running now");
+        List<SmartBin> smartBinsList = getSmartBinData();
+        for (SmartBin bin : smartBinsList) {
+            String batteryStr = bin.getSmartbin_batteryStatus();
+            if (batteryStr == null) {
+                continue; // skip invalid data safely
+            }
+            int battery;
+            try {
+                battery = Integer.parseInt(batteryStr);
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid battery value for deviceId {}: {}",
+                        bin.getDevice_id(), batteryStr);
+                continue;
+            }
+            // Drain battery by 1% per hour
+            battery = Math.max(battery - 1, 0);
+            bin.setSmartbin_batteryStatus(String.valueOf(battery));
+        }
+        smartBinRepo.saveAll(smartBinsList);
+    }
+
 }
