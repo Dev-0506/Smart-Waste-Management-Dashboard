@@ -16,6 +16,9 @@ export default function MunicipalLogin() {
   const { loginMunicipal } = useAuth();
   const navigate = useNavigate();
 
+  const VALID_EMAIL = 'admin@municipality.gov';
+  const VALID_PASSWORD = 'Municipal123';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -23,12 +26,19 @@ export default function MunicipalLogin() {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Validate credentials on UI side
+    if (email !== VALID_EMAIL || password !== VALID_PASSWORD) {
+      toast.error('Incorrect Email Address and Password, Kindly Connect to the Administrator');
+      setIsLoading(false);
+      return;
+    }
+
     const success = loginMunicipal(email, password);
     if (success) {
       toast.success('Login successful!');
       navigate('/municipal/dashboard');
     } else {
-      toast.error('Invalid credentials. Please try again.');
+      toast.error('Incorrect Email Address and Password, Kindly Connect to the Administrator');
     }
     setIsLoading(false);
   };
@@ -60,7 +70,7 @@ export default function MunicipalLogin() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@municipality.gov"
+                  placeholder=""
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -71,7 +81,7 @@ export default function MunicipalLogin() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -82,10 +92,10 @@ export default function MunicipalLogin() {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-            
+
             <div className="mt-6 p-4 bg-muted/30 rounded-lg">
               <p className="text-sm text-muted-foreground text-center">
-                <strong>Demo:</strong> Use any email and password (min 4 chars)
+                <strong>Note:</strong>  If you are unware of your credentials, please connect to the Administrator.
               </p>
             </div>
           </CardContent>
