@@ -1,20 +1,79 @@
-import MunicipalLayout from '@/components/layout/MunicipalLayout';
-import StatCard from '@/components/dashboard/StatCard';
 import BinCard from '@/components/dashboard/BinCard';
-import { useData } from '@/context/DataContext';
-import { 
-  Trash2, 
-  AlertTriangle, 
-  Battery, 
-  CheckCircle2,
-  TrendingUp
-} from 'lucide-react';
+import StatCard from '@/components/dashboard/StatCard';
+import MunicipalLayout from '@/components/layout/MunicipalLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { SmartBin } from '@/types/smartbin';
+import {
+  AlertTriangle,
+  Battery,
+  Trash2,
+  TrendingUp
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function MunicipalDashboard() {
-  const { bins, notifications, getImmediateActionBins } = useData();
-  
+  const [bins, setBins] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const getImmediateActionBins = useCallback((): SmartBin[] => {
+    return bins.filter(bin =>
+      bin.percentFilled >= 80 ||
+      bin.batteryStatus <= 20 ||
+      bin.status === 'error'
+    );
+  }, [bins]);
+
+  type BinResposne = {
+    "device_id": string,
+    "id": number,
+    "installationStatus": string,
+    "is_smartbin_Onboarded": boolean,
+    "percent_filled": number,
+    "region": string,
+    "smartbin_batteryStatus": number,
+    "smartbin_location": string,
+    "smartbin_status": string,
+  }
+
+  const fetchBins = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/smartbin/find');
+      const data = await response.json();
+      const mappedData: SmartBin[] = data.map((bin: BinResposne) => ({
+        id: bin.id,
+        manufacturingId: bin.device_id,
+        location: bin.smartbin_location,
+        zone: bin.region,
+        installationStatus: bin.installationStatus,
+        status: bin.smartbin_status,
+        percentFilled: bin.percent_filled,
+        batteryStatus: bin.smartbin_batteryStatus,
+        lastUpdated: new Date(),
+        onboarded: bin.is_smartbin_Onboarded,
+      }));
+      setBins(mappedData);
+    } catch (error) {
+      console.error('Error fetching bins:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+      setNotifications(data);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    document.title = 'Dashboard - SmartBin Municipal Portal';
+    fetchBins();
+    fetchNotifications();
+  }, []);
+  console.log('bins', bins)
+
   const activeBins = bins.filter(b => b.status === 'active').length;
   const immediateActionCount = getImmediateActionBins().length;
   const criticalAlerts = notifications.filter(n => n.severity === 'critical' && !n.read).length;
