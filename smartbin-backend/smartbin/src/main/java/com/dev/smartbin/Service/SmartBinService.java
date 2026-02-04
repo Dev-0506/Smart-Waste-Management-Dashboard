@@ -3,9 +3,11 @@ package com.dev.smartbin.Service;
 import com.dev.smartbin.DTO.DeviceOnboardRequestDTO;
 import com.dev.smartbin.Model.DeviceOnboardRequest;
 import com.dev.smartbin.Model.ImmediateActionBin;
+import com.dev.smartbin.Model.Notification;
 import com.dev.smartbin.Model.SmartBin;
 import com.dev.smartbin.Repository.DeviceOnboardRequestRepo;
 import com.dev.smartbin.Repository.ImmediateActionBinRepo;
+import com.dev.smartbin.Repository.NotificationRepo;
 import com.dev.smartbin.Repository.SmartBinRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.time.Instant;
 import java.util.Date;
@@ -31,6 +34,9 @@ public class SmartBinService {
 
     @Autowired
     private ImmediateActionBinRepo immediateActionBinRepo;
+
+    @Autowired
+    private NotificationRepo notificationRepo;
 
     private static final Logger logger = LoggerFactory.getLogger(SmartBinService.class);
 
@@ -73,7 +79,8 @@ public class SmartBinService {
             smartBin.setSmartbin_status("Active");
             smartBin.setIs_smartbin_Onboarded(true);
             smartBinRepo.saveAndFlush(smartBin);
-
+            String message=deviceId+" Device is Onboarded to the Application Successfully";
+            addNotification(message, "medium", "information", smartBin);
             return "ACCEPTED";
         } else {
             logger.error("acceptOnboardRequest: Incorrect device id passed");
@@ -87,6 +94,8 @@ public class SmartBinService {
         Optional<DeviceOnboardRequest> deviceOnboardRequestOptional = deviceOnboardRequestRepo.findDeviceOnboardRequestByDeviceId(deviceId);
         if (deviceOnboardRequestOptional.isPresent()) {
             DeviceOnboardRequest onboardRequest = deviceOnboardRequestOptional.get();
+            String message=deviceId+" Device is Rejected by the Application Successfully";
+            addNotification(message, "medium", "information", null);
             deviceOnboardRequestRepo.deleteById(onboardRequest.getId());
             smartBinRepo.deleteById(onboardRequest.getSmartBin().getId());
             return "ACCEPTED";
@@ -130,15 +139,21 @@ public class SmartBinService {
         immediateActionBin.setSmartBin(smartBin);
         if(smartBin.getPercent_filled() > 75 && smartBin.getPercent_filled() < 85){
             immediateActionBin.setImmediateAction_status("Medium");
+            String message="Bin "+ smartBin.getDevice_id() +" at "+smartBin.getSmartbin_location()+" is "+smartBin.getPercent_filled()+"% full - Schedule pickup soon";
+            addNotification(message, "medium", "overflow", smartBin);
         } else if (smartBin.getPercent_filled() >= 85 && smartBin.getPercent_filled() < 95) {
+            String message="Bin "+ smartBin.getDevice_id() +" at "+smartBin.getSmartbin_location()+" is "+smartBin.getPercent_filled()+"% full - Schedule pickup soon";
+            addNotification(message, "high", "overflow", smartBin);
             immediateActionBin.setImmediateAction_status("High");
         }else {
+            String message="Bin "+ smartBin.getDevice_id() +" at "+smartBin.getSmartbin_location()+" is "+smartBin.getPercent_filled()+"% full - Immediate collection required";
+            addNotification(message, "critical", "overflow", smartBin);
             immediateActionBin.setImmediateAction_status("Critical");
         }
         immediateActionBinRepo.saveAndFlush(immediateActionBin);
     }
 
-    public List<ImmediateActionBin> getAllImmediateActionBin() {
+    public List<ImmediateActionBin> getAllImmediateActionActiveSmartBin() {
         List<ImmediateActionBin> immediateActionBins= immediateActionBinRepo.findAll();
         return immediateActionBins.stream().filter(p->"Active".equalsIgnoreCase(p.getSmartBin().getSmartbin_status())).toList();
     }
@@ -157,6 +172,13 @@ public class SmartBinService {
             int battery;
             try {
                 battery = Integer.parseInt(batteryStr);
+                if(battery < 20 && battery > 5){
+                    String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+batteryStr+"%";
+                    addNotification(message, "high", "battery", bin);
+                }else if(battery <= 5){
+                    String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+batteryStr+"%";
+                    addNotification(message, "critical", "battery", bin);
+                }
             } catch (NumberFormatException e) {
                 logger.warn("Invalid battery value for deviceId {}: {}",
                         bin.getDevice_id(), batteryStr);
@@ -169,4 +191,18 @@ public class SmartBinService {
         smartBinRepo.saveAll(smartBinsList);
     }
 
+    public List<Notification> getAllNotification() {
+        return notificationRepo.findAll();
+    }
+
+    public void addNotification(String message, String severity, String type, SmartBin smartBin){
+        Notification notification=new Notification();
+        notification.setMessage(message);
+        notification.setSeverity(severity);
+        notification.setType(type);
+        notification.setSmartBin(smartBin);
+        notification.setCreatedAt(Date.from(Instant.now()));
+        notification.setRead(false);
+        notificationRepo.save(notification);
+    }
 }
