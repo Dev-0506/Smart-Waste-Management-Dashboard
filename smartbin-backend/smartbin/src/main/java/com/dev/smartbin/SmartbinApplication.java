@@ -38,18 +38,7 @@ public class SmartbinApplication implements CommandLineRunner {
 	@Transactional
 	public void run(String... args) throws Exception {
 
-		MasterBins masterBins=new MasterBins();
-		masterBins.setDevice_id("SB_1234");
-		masterBins.setDevice_password("SB_1234");
-
-		MasterBins masterBins1=new MasterBins();
-		masterBins1.setDevice_id("SB_9876");
-		masterBins1.setDevice_password("SB_9876");
-
-		List<MasterBins> binsList=new ArrayList<>();
-		binsList.add(masterBins);
-		binsList.add(masterBins1);
-
+		List<MasterBins> binsList = getMasterBins();
 		masterBinRepo.saveAllAndFlush(binsList);
 
 //		SmartBin smartBin=new SmartBin();
@@ -71,5 +60,30 @@ public class SmartbinApplication implements CommandLineRunner {
 //
 //		deviceOnboardRequestRepo.save(deviceOnboardRequest);
 
+	}
+
+	private static List<MasterBins> getMasterBins() {
+		MasterBins masterBins=new MasterBins();
+		masterBins.setDevice_id("SB_1234");
+		masterBins.setDevice_password("SB_1234");
+
+		MasterBins masterBins1=new MasterBins();
+		masterBins1.setDevice_id("SB_9876");
+		masterBins1.setDevice_password("SB_9876");
+
+		MasterBins masterBins2=new MasterBins();
+		masterBins2.setDevice_id("SB_2468");
+		masterBins2.setDevice_password("SB_2468");
+
+		MasterBins masterBins3=new MasterBins();
+		masterBins3.setDevice_id("SB_1357");
+		masterBins3.setDevice_password("SB_1357");
+
+		List<MasterBins> binsList=new ArrayList<>();
+		binsList.add(masterBins);
+		binsList.add(masterBins1);
+		binsList.add(masterBins2);
+		binsList.add(masterBins3);
+		return binsList;
 	}
 }
