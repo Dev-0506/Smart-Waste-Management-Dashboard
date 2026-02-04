@@ -185,7 +185,7 @@ export default function DeviceLogin() {
 
             <div className="mt-6 p-4 bg-muted/30 rounded-lg">
               <p className="text-sm text-muted-foreground text-center">
-                <strong>Demo:</strong> Use ID format SB-XXXX with password: default123
+                <strong>Note:</strong> If you are unware of your credentials, please connect to the Smart Bin Device Administrator.
               </p>
             </div>
           </CardContent>
