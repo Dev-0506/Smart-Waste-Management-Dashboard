@@ -172,13 +172,6 @@ public class SmartBinService {
             int battery;
             try {
                 battery = Integer.parseInt(batteryStr);
-                if(battery < 20 && battery > 5){
-                    String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+batteryStr+"%";
-                    addNotification(message, "high", "battery", bin);
-                }else if(battery <= 5){
-                    String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+batteryStr+"%";
-                    addNotification(message, "critical", "battery", bin);
-                }
             } catch (NumberFormatException e) {
                 logger.warn("Invalid battery value for deviceId {}: {}",
                         bin.getDevice_id(), batteryStr);
@@ -186,6 +179,13 @@ public class SmartBinService {
             }
             // Drain battery by 1% per hour
             battery = Math.max(battery - 1, 0);
+            if(battery < 20 && battery > 5){
+                String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+ battery +"%";
+                addNotification(message, "high", "battery", bin);
+            }else if(battery <= 5){
+                String message = "Bin "+ bin.getDevice_id()+" battery critically low at "+ battery +"%";
+                addNotification(message, "critical", "battery", bin);
+            }
             bin.setSmartbin_batteryStatus(String.valueOf(battery));
         }
         smartBinRepo.saveAll(smartBinsList);

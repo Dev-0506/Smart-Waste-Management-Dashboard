@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 @SpringBootApplication
+@EnableScheduling
 public class SmartbinApplication implements CommandLineRunner {
 
 	@Autowired
@@ -50,24 +52,24 @@ public class SmartbinApplication implements CommandLineRunner {
 
 		masterBinRepo.saveAllAndFlush(binsList);
 
-		SmartBin smartBin=new SmartBin();
-		smartBin.setDevice_id("SB_1234");
-		smartBin.setRegion("East");
-		smartBin.setIs_smartbin_Onboarded(Boolean.TRUE);
-		smartBin.setSmartbin_location("Mumbai");
-		smartBin.setPercent_filled(30);
-		smartBin.setSmartbin_status("InActive");
-		smartBin.setSmartbin_batteryStatus("50");
-		smartBin.setInstallationStatus("Installed");
-
-		smartBinRepo.save(smartBin);
-
-		DeviceOnboardRequest deviceOnboardRequest=new DeviceOnboardRequest();
-		deviceOnboardRequest.setDeviceOnBoardStatus("Requested");
-		deviceOnboardRequest.setSmartBin(smartBin);
-		deviceOnboardRequest.setCreatedAt(Date.from(Instant.now()));
-
-		deviceOnboardRequestRepo.save(deviceOnboardRequest);
+//		SmartBin smartBin=new SmartBin();
+//		smartBin.setDevice_id("SB_1234");
+//		smartBin.setRegion("East");
+//		smartBin.setIs_smartbin_Onboarded(Boolean.TRUE);
+//		smartBin.setSmartbin_location("Mumbai");
+//		smartBin.setPercent_filled(30);
+//		smartBin.setSmartbin_status("InActive");
+//		smartBin.setSmartbin_batteryStatus("50");
+//		smartBin.setInstallationStatus("Installed");
+//
+//		smartBinRepo.save(smartBin);
+//
+//		DeviceOnboardRequest deviceOnboardRequest=new DeviceOnboardRequest();
+//		deviceOnboardRequest.setDeviceOnBoardStatus("Requested");
+//		deviceOnboardRequest.setSmartBin(smartBin);
+//		deviceOnboardRequest.setCreatedAt(Date.from(Instant.now()));
+//
+//		deviceOnboardRequestRepo.save(deviceOnboardRequest);
 
 	}
 }
